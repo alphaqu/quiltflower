@@ -31,7 +31,7 @@ public final class DirectGraph {
 
   public void sortReversePostOrder() {
     ArrayList<DirectNode> res = new ArrayList<>();
-    addChildren(first, res, new HashSet<>());
+    addToReversePostOrderListIterativeChildren(first, res, new HashSet<>());
 
     nodes.clear();
     for (DirectNode node : res) {
@@ -39,11 +39,11 @@ public final class DirectGraph {
     }
   }
 
-  private static void addChildren(final DirectNode root, final ArrayList<? super DirectNode> out, final HashSet<DirectNode> visited) {
+  private static void addToReversePostOrderListIterativeChildren(final DirectNode root, final ArrayList<? super DirectNode> out, final HashSet<DirectNode> visited) {
     visited.add(root);
     for (DirectNode succ : root.succs) {
       if (!visited.contains(succ)) {
-        addChildren(succ, out, visited);
+        addToReversePostOrderListIterativeChildren(succ, out, visited);
       }
     }
     out.add(0, root);

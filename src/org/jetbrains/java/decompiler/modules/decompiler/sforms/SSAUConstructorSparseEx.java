@@ -73,7 +73,7 @@ public class SSAUConstructorSparseEx {
     DirectGraph dgraph = flatthelper.buildDirectGraph(root);
 
     DotExporter.toDotFile(dgraph, mt, "ssauSplitVariables");
-    
+
     List<Integer> setInit = new ArrayList<>();
     for (int i = 0; i < 64; i++) {
       setInit.add(i);
@@ -100,7 +100,6 @@ public class SSAUConstructorSparseEx {
   }
 
   private void ssaStatements(DirectGraph dgraph, HashSet<String> updated, boolean calcLiveVars, StructMethod mt, int itteration) {
-
     DotExporter.toDotFile(dgraph, mt, "ssauStatements_" + itteration);
 
     for (DirectNode node : dgraph.nodes) {

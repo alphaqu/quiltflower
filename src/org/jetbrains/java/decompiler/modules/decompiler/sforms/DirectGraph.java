@@ -5,17 +5,15 @@ import org.jetbrains.java.decompiler.modules.decompiler.exps.Exprent;
 import org.jetbrains.java.decompiler.modules.decompiler.sforms.FlattenStatementsHelper.FinallyPathWrapper;
 import org.jetbrains.java.decompiler.util.VBStyleCollection;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 
 
-public class DirectGraph {
+public final class DirectGraph {
 
   public final VBStyleCollection<DirectNode, String> nodes = new VBStyleCollection<>();
-
-  public DirectNode first;
 
   // exit, [source, destination]
   public final HashMap<String, List<FinallyPathWrapper>> mapShortRangeFinallyPaths = new HashMap<>();
@@ -29,9 +27,11 @@ public class DirectGraph {
   // nodes, that are exception exits of a finally block with monitor variable
   public final HashMap<String, String> mapFinallyMonitorExceptionPathExits = new HashMap<>();
 
+  public DirectNode first;
+
   public void sortReversePostOrder() {
-    LinkedList<DirectNode> res = new LinkedList<>();
-    addToReversePostOrderListIterative(first, res);
+    ArrayList<DirectNode> res = new ArrayList<>();
+    addChildren(first, res, new HashSet<>());
 
     nodes.clear();
     for (DirectNode node : res) {
@@ -39,81 +39,46 @@ public class DirectGraph {
     }
   }
 
-  private static void addToReversePostOrderListIterative(DirectNode root, List<? super DirectNode> lst) {
-
-    LinkedList<DirectNode> stackNode = new LinkedList<>();
-    LinkedList<Integer> stackIndex = new LinkedList<>();
-
-    HashSet<DirectNode> setVisited = new HashSet<>();
-
-    stackNode.add(root);
-    stackIndex.add(0);
-
-    while (!stackNode.isEmpty()) {
-
-      DirectNode node = stackNode.getLast();
-      int index = stackIndex.removeLast();
-
-      setVisited.add(node);
-
-      for (; index < node.succs.size(); index++) {
-        DirectNode succ = node.succs.get(index);
-
-        if (!setVisited.contains(succ)) {
-          stackIndex.add(index + 1);
-
-          stackNode.add(succ);
-          stackIndex.add(0);
-
-          break;
-        }
-      }
-
-      if (index == node.succs.size()) {
-        lst.add(0, node);
-
-        stackNode.removeLast();
+  private static void addChildren(final DirectNode root, final ArrayList<? super DirectNode> out, final HashSet<DirectNode> visited) {
+    visited.add(root);
+    for (DirectNode succ : root.succs) {
+      if (!visited.contains(succ)) {
+        addChildren(succ, out, visited);
       }
     }
+    out.add(0, root);
   }
 
+  private static boolean run(final DirectNode node, final ExprentIterator iter, final HashSet<DirectNode> setVisited) {
+    if (setVisited.contains(node)) {
+      return true;
+    }
+    setVisited.add(node);
 
-  public boolean iterateExprents(ExprentIterator iter) {
+    for (int i = 0; i < node.exprents.size(); i++) {
+      int res = iter.processExprent(node.exprents.get(i));
 
-    LinkedList<DirectNode> stack = new LinkedList<>();
-    stack.add(first);
-
-    HashSet<DirectNode> setVisited = new HashSet<>();
-
-    while (!stack.isEmpty()) {
-
-      DirectNode node = stack.removeFirst();
-
-      if (setVisited.contains(node)) {
-        continue;
+      if (res == 1) {
+        return false;
+      } else if (res == 2) {
+        node.exprents.remove(i);
+        i--;
       }
-      setVisited.add(node);
-
-      for (int i = 0; i < node.exprents.size(); i++) {
-        int res = iter.processExprent(node.exprents.get(i));
-
-        if (res == 1) {
-          return false;
-        }
-
-        if (res == 2) {
-          node.exprents.remove(i);
-          i--;
-        }
-      }
-
-      stack.addAll(node.succs);
     }
 
+    for (final DirectNode succ : node.succs) {
+      if (!run(succ, iter, setVisited)) {
+        return false;
+      }
+    }
     return true;
   }
 
-  public boolean iterateExprentsDeep(ExprentIterator itr) {
+  public boolean iterateExprents(final ExprentIterator iter) {
+    return run(first, iter, new HashSet<>());
+  }
+
+  public boolean iterateExprentsDeep(final ExprentIterator itr) {
     return iterateExprents(exprent -> {
       List<Exprent> lst = exprent.getAllExprents(true);
       lst.add(exprent);

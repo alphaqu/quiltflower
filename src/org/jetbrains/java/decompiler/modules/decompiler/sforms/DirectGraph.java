@@ -49,7 +49,7 @@ public final class DirectGraph {
     out.add(0, root);
   }
 
-  private static boolean run(final DirectNode node, final ExprentIterator iter, final HashSet<DirectNode> setVisited) {
+  private static boolean runExprents(final DirectNode node, final ExprentIterator iter, final HashSet<DirectNode> setVisited) {
     if (setVisited.contains(node)) {
       return true;
     }
@@ -67,7 +67,7 @@ public final class DirectGraph {
     }
 
     for (final DirectNode succ : node.succs) {
-      if (!run(succ, iter, setVisited)) {
+      if (!runExprents(succ, iter, setVisited)) {
         return false;
       }
     }
@@ -75,7 +75,7 @@ public final class DirectGraph {
   }
 
   public boolean iterateExprents(final ExprentIterator iter) {
-    return run(first, iter, new HashSet<>());
+    return runExprents(first, iter, new HashSet<>());
   }
 
   public boolean iterateExprentsDeep(final ExprentIterator itr) {
